@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dark Hunt (다크 헌트) - 밤의 숲 픽셀 사냥 게임</title>
+<meta name="description" content="Dark Hunt(다크 헌트): 달빛만 남은 밤의 숲과 늪에서 동물을 사냥하고, 돈을 벌어 더 좋은 장비로 더 위험한 동물에 도전하는 무료 픽셀 웹 게임. 설치 없이 크롬에서 바로 플레이.">
+<meta name="keywords" content="Dark Hunt, 다크 헌트, 다크헌트, 사냥 게임, 픽셀 게임, 웹 게임, 무료 게임">
+<meta property="og:title" content="Dark Hunt (다크 헌트)">
+<meta property="og:description" content="밤의 숲 픽셀 사냥 게임 — 브라우저에서 바로 플레이">
+<meta property="og:image" content="menu_bg.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: 달밤의 숲, 사냥꾼의 모닥불 — 조용하고 서늘한 게임 포스터
+   IDEA: 오래된 사냥 오두막에 걸린 나무 액자 속 게임 화면
+   PICTURE: 게임 화면 자체 (나무 테두리 안), 뒤로 픽셀 달밤 숲
+   COLOUR and TYPE: 짙은 밤 남청 + 이끼 녹색 + 모닥불 금색 / Silkscreen 제목 + Noto Sans KR
+   LAYOUT: 제목 줄 → 큰 게임 액자 → 조작법·게임 소개 두 칸 → 출처 */
+:root{color-scheme:dark;--bg:#070d12;--deep:#0f1c1d;--moss:#2c4a2e;--wood:#5a3d22;--wood2:#3a2614;--gold:#f0c35a;--ink:#e9e4d4;--mute:#a9b3a6;--line:#24342f}
+:root[data-theme=light]{color-scheme:dark}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html{scroll-padding-top:72px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Noto Sans KR",system-ui,sans-serif;overflow-x:clip}
+.sky{position:relative;background:url(menu_bg.png) center bottom/cover no-repeat;image-rendering:pixelated}
+.sky::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,18,20,.15),rgba(10,18,20,.55) 70%,var(--bg))}
+.wrap{position:relative;z-index:1;max-width:1240px;margin:0 auto;padding:clamp(20px,3vw,40px) max(4vw,14px) clamp(28px,4vw,56px)}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 20px;margin-bottom:clamp(14px,2vw,22px)}
+h1{margin:0;font:700 clamp(34px,6vw,58px)/1.05 Silkscreen,monospace;color:var(--gold);text-shadow:4px 4px 0 #000;letter-spacing:.02em}
+header p{margin:0;color:var(--ink);font-size:17px;text-shadow:0 2px 6px #000}
+.frame{background:linear-gradient(180deg,var(--wood),var(--wood2));padding:clamp(8px,1.2vw,14px);border-radius:6px;box-shadow:0 0 0 2px #1a110a,0 18px 50px rgba(0,0,0,.6);position:relative}
+.frame::before,.frame::after{content:"";position:absolute;width:10px;height:10px;background:#c9a86a;border-radius:2px;top:6px;left:6px;box-shadow:calc(100% - 0px) 0 0 0 transparent}
+.screen{position:relative;aspect-ratio:16/9;background:#000;border:2px solid #1a110a;overflow:hidden}
+#unity-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;background:#000}
+.start{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:18px;background:rgba(4,8,9,.45);text-align:center;padding:20px}
+.start img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;image-rendering:pixelated;z-index:-1}
+.btn{font:700 20px/1 "Noto Sans KR",sans-serif;color:#fff8e6;background:#3f6b2c;border:3px solid #13200f;border-radius:6px;padding:16px 34px;min-height:44px;cursor:pointer;box-shadow:inset 0 -5px 0 rgba(0,0,0,.25),0 6px 0 #13200f}
+.btn:hover{background:#4c7d36}.btn:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.btn.small{font-size:15px;padding:10px 16px;background:#5a3d22;box-shadow:inset 0 -4px 0 rgba(0,0,0,.25),0 4px 0 #1a110a;border-color:#1a110a}
+.hint{color:var(--ink);font-size:14px;text-shadow:0 1px 4px #000}
+.load{position:absolute;left:10%;right:10%;bottom:12%;display:none}
+.bar{height:14px;border:2px solid #1a110a;background:#16201c;border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#c8902e,var(--gold))}
+.load span{display:block;text-align:center;margin-top:8px;font-size:14px;text-shadow:0 1px 4px #000}
+.tools{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;color:var(--mute);font-size:14px}
+.err{display:none;position:absolute;inset:0;place-items:center;text-align:center;padding:24px;background:rgba(0,0,0,.8);font-size:15px}
+.band{max-width:1240px;margin:0 auto;padding:clamp(24px,3.5vw,48px) max(4vw,14px)}
+.cols{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:clamp(20px,3vw,40px)}
+h2{font:700 24px/1.2 "Noto Sans KR",sans-serif;margin:0 0 14px;color:var(--gold)}
+.keys{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px 18px;margin:0;padding:0;list-style:none}
+.keys li{display:flex;align-items:center;gap:10px;font-size:15px}
+kbd{flex:none;min-width:84px;text-align:center;font:700 13px/1 "Noto Sans KR",sans-serif;color:var(--gold);background:#0b1110;border:2px solid #3a2a18;border-bottom-width:4px;border-radius:5px;padding:7px 8px;white-space:nowrap}
+.about p{margin:0 0 12px;color:var(--ink)}
+.about ul{margin:0;padding-left:18px;color:var(--mute)}
+.about li{margin:4px 0}
+footer{border-top:1px solid var(--line);color:var(--mute);font-size:13px}
+footer .band{padding-top:20px;padding-bottom:28px}
+footer a{color:var(--gold)}
+@media(max-width:760px){.cols{grid-template-columns:minmax(0,1fr)}.keys{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){header p{font-size:15px}.btn{font-size:18px;padding:14px 26px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="sky">
+  <div class="wrap">
+    <header>
+      <h1>DARK HUNT</h1><span style="color:var(--ink);text-shadow:0 2px 6px #000">다크 헌트</span>
+      <p>달빛만 남은 밤의 숲. 사냥하고, 돈을 벌고, 더 깊이.</p>
+    </header>
+    <div class="frame">
+      <div class="screen" id="screen">
+        <canvas id="unity-canvas" tabindex="-1"></canvas>
+        <div class="start" id="start">
+          <img src="menu_bg.png" alt="">
+          <button class="btn" id="play">▶ 게임 시작</button>
+          <div class="hint">처음 한 번은 불러오는 데 시간이 조금 걸려요 (약 15MB) · PC 크롬 권장</div>
+        </div>
+        <div class="load" id="load"><div class="bar"><i id="fill"></i></div><span id="pct">불러오는 중… 0%</span></div>
+        <div class="err" id="err"></div>
+      </div>
+    </div>
+    <div class="tools">
+      <span>키보드와 마우스로 해요. 진행은 이 브라우저에 자동 저장돼요.</span>
+      <button class="btn small" id="full">⛶ 전체 화면</button>
+    </div>
+  </div>
+</div>
+
+<div class="band cols">
+  <section>
+    <h2>조작법</h2>
+    <ul class="keys" id="keys"></ul>
+  </section>
+  <section class="about">
+    <h2>어떤 게임인가요</h2>
+    <p>모든 것이 밤에 일어나요. 풀벌레가 울고 반딧불이가 떠다니는 어두운 숲에 혼자 남은 사냥꾼이 되어 토끼, 사슴, 멧돼지, 늑대를 사냥하고 가죽과 고기를 손질해 팔아요. 번 돈으로 더 좋은 활, 총, 칼, 덫, 탈것을 사서 곰과 괴물곰 같은 더 위험한 동물에 도전해요.</p>
+    <ul>
+      <li>캠프의 상점에서 장비를 사고, 판매 상점에서 전리품을 팔아요.</li>
+      <li>나무꾼의 부탁을 들어주면 도끼로 나무를 베고 보상을 받아요.</li>
+      <li>숲 동쪽에는 안개 낀 밤의 늪지대가 있어요. 얕은 물에선 걸음이 느려져요.</li>
+      <li>모닥불과 가게 등불 근처는 밝고, 숲 깊은 곳은 어두워요.</li>
+      <li>Shift로 달리면 기력이 줄어요. R로 음식을 먹어 체력을 채워요.</li>
+    </ul>
+  </section>
+</div>
+
+<footer>
+  <div class="band">
+    효과음: OpenGameArt.org의 CC0(퍼블릭 도메인) 소리 (풀벌레: Wolfgang_) + 직접 만든 소리 · 글꼴: Noto Sans KR (SIL Open Font License) · 그림과 게임: Dark Hunt
+  </div>
+</footer>
+
+<script>
+{
+  const keys = [["W A S D","이동"],["Shift","달리기 (기력 5초)"],["E","인벤토리 · 장착"],["1","사냥용 들기"],["2","해체용 들기"],["3","도구 들기"],
+    ["왼쪽 클릭","쏘기 · 칼·도끼로 때리기"],["Z","아이템 줍기 · 덫 회수"],["R","음식 먹기"],["B","탈것 타기 · 내리기"],["Space","덫 놓기 · 상점 · 말 걸기"],
+    ["Space 꾹","시체 손질 (칼 들고)"],["Tab","지도"],["Esc","창 닫기"]];
+  const esc = s => s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+  document.getElementById("keys").innerHTML = keys.map(([k, a]) => `<li><kbd>${esc(k)}</kbd><span>${esc(a)}</span></li>`).join("");
+
+  const canvas = document.getElementById("unity-canvas");
+  const start = document.getElementById("start"), load = document.getElementById("load");
+  const fill = document.getElementById("fill"), pct = document.getElementById("pct"), err = document.getElementById("err");
+  let instance = null, started = false;
+
+  // 게임 화면 안에서는 스페이스·방향키가 페이지를 스크롤하지 않게
+  window.addEventListener("keydown", e => {
+    if (started && [" ", "Tab", "ArrowUp", "ArrowDown"].includes(e.key) && document.activeElement === canvas) e.preventDefault();
+  });
+
+  function fail(msg) {
+    err.style.display = "grid";
+    err.textContent = "게임을 불러오지 못했어요. " + msg;
+  }
+
+  function show(p) { const v = Math.min(100, Math.round(p * 100)); fill.style.width = v + "%"; pct.textContent = "불러오는 중… " + v + "%"; }
+
+  function boot() {
+    if (started) return;
+    started = true;
+    start.style.display = "none";
+    load.style.display = "block";
+    Promise.resolve().then(() => {
+      const s = document.createElement("script");
+      s.src = "Build/WebGL.loader.js";
+      s.onerror = () => fail("(loader)");
+      s.onload = () => {
+        createUnityInstance(canvas, {
+          dataUrl: "Build/WebGL.data.unityweb",
+          frameworkUrl: "Build/WebGL.framework.js.unityweb",
+          codeUrl: "Build/WebGL.wasm.unityweb",
+          streamingAssetsUrl: "StreamingAssets",
+          companyName: "Dark Hunt", productName: "Dark Hunt", productVersion: "1.0",
+        }, p => show(p))
+        .then(u => { instance = u; load.style.display = "none"; canvas.focus(); })
+        .catch(e => fail(String(e && e.message || e)));
+      };
+      document.body.appendChild(s);
+    }).catch(e => fail(String(e && e.message || e)));
+  }
+  document.getElementById("play").addEventListener("click", boot);
+  canvas.addEventListener("mousedown", () => canvas.focus());
+  document.getElementById("full").addEventListener("click", () => {
+    try {
+      if (instance) instance.SetFullscreen(1);
+      else { const el = document.getElementById("screen"); (el.requestFullscreen || el.webkitRequestFullscreen).call(el).catch(() => {}); }
+    } catch (e) {}
+  });
+}
+</script>
+</body>
+</html>
